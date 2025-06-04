@@ -1,10 +1,7 @@
 import streamlit as st
 
-st.set_page_config(
-    page_title="Football Dashboard",
-    page_icon="🏈",
-    layout="wide",
-)
+with st.sidebar:
+    st.header("Your Sidebar Header")
+    st.selectbox("Choose a page:", ["Home", "Stats", "Compare"])
 
-st.title("🏈 Football Stats Dashboard")
-st.write("Welcome! Use the sidebar to explore different stats.")
+st.title("Welcome to the Football Dashboard!")
