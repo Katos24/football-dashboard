@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import altair as alt
 
+
 st.set_page_config(layout="wide")
 st.title("NFL Receiving Stats Viewer")
 
@@ -135,3 +136,62 @@ df_display.index = df_display.index + 1  # start index at 1
 df_display.index.name = 'Rank'
 
 st.dataframe(df_display)
+
+
+
+
+
+
+
+
+
+# --- ADD THIS AFTER YOUR EXISTING CODE ---
+
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_squared_error, r2_score
+
+st.markdown("---")
+st.header("Predict First Downs (1D) Using Receiving Stats")
+
+# Prepare features for modeling
+features = ['Tgt', 'Rec', 'Yds', 'TD', 'Succ%', 'Ctch%', 'Y/R']
+
+# Clean percentage columns if needed (remove % sign and convert)
+df_model = df_filtered.copy()
+for col in ['Succ%', 'Ctch%']:
+    if df_model[col].dtype == object:
+        df_model[col] = df_model[col].str.rstrip('%').astype(float)
+
+X = df_model[features].fillna(0)
+y = df_model['1D']
+
+# Train-test split and model training
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+model = RandomForestRegressor(n_estimators=100, random_state=42)
+model.fit(X_train, y_train)
+
+y_pred = model.predict(X_test)
+
+st.write(f"Model R² Score: {r2_score(y_test, y_pred):.2f}")
+st.write(f"Root Mean Squared Error: {mean_squared_error(y_test, y_pred, squared=False):.2f}")
+
+# User input to predict First Downs
+st.markdown("### Enter Player Stats to Predict First Downs")
+
+input_data = {
+    'Tgt': st.number_input("Targets (Tgt)", min_value=0, max_value=300, value=50),
+    'Rec': st.number_input("Receptions (Rec)", min_value=0, max_value=300, value=40),
+    'Yds': st.number_input("Yards (Yds)", min_value=0, max_value=3000, value=800),
+    'TD': st.number_input("Touchdowns (TD)", min_value=0, max_value=50, value=5),
+    'Succ%': st.number_input("Success % (Succ%)", min_value=0.0, max_value=100.0, value=60.0),
+    'Ctch%': st.number_input("Catch % (Ctch%)", min_value=0.0, max_value=100.0, value=70.0),
+    'Y/R': st.number_input("Yards per Reception (Y/R)", min_value=0.0, max_value=30.0, value=12.0),
+}
+
+input_df = pd.DataFrame([input_data])
+
+if st.button("Predict First Downs (1D)"):
+    prediction = model.predict(input_df)[0]
+    st.success(f"Predicted First Downs: {prediction:.1f}")

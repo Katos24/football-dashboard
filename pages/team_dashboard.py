@@ -184,3 +184,52 @@ st.dataframe(df_display, use_container_width=True, height=400)
 
 
 
+
+
+
+
+# --- Historic First Downs Line Chart ---
+
+st.markdown("### 📈 Historic First Downs Line Chart (Team Over Years)")
+st.markdown("Visualize how TOTAL, RUSH, PASS, and PEN first downs changed year-over-year.")
+
+# Load and combine full data for all years
+full_dfs = []
+for year, url in csv_urls.items():
+    temp_df = pd.read_csv(url)
+    temp_df = temp_df[['TEAM', 'TOTAL', 'RUSH', 'PASS', 'PEN']].copy()
+    temp_df['YEAR'] = int(year)
+    full_dfs.append(temp_df)
+
+historic_full = pd.concat(full_dfs).sort_values(by=['TEAM', 'YEAR'], ascending=[True, True]).reset_index(drop=True)
+
+# Select team to plot
+team_options = sorted(historic_full['TEAM'].unique())
+with st.expander("📊 Historic Team Selector", expanded=True):
+    selected_team_hist = st.selectbox("Select Team for Historic Chart", team_options)
+
+# Filter data for selected team
+team_df = historic_full[historic_full['TEAM'] == selected_team_hist]
+
+# Melt the DataFrame for easier plotting with Plotly
+team_melted = team_df.melt(id_vars=['YEAR'], value_vars=['TOTAL', 'RUSH', 'PASS', 'PEN'], 
+                           var_name='Category', value_name='First Downs')
+
+# Create line chart
+fig = px.line(
+    team_melted,
+    x='YEAR',
+    y='First Downs',
+    color='Category',
+    markers=True,
+    title=f"{selected_team_hist} First Downs by Type Over Time",
+    color_discrete_map={
+        'TOTAL': '#1f77b4',
+        'RUSH': '#2ca02c',
+        'PASS': '#ff7f0e',
+        'PEN': '#d62728'
+    }
+)
+fig.update_layout(xaxis=dict(dtick=1))
+
+st.plotly_chart(fig, use_container_width=True)
